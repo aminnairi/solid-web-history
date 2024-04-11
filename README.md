@@ -48,7 +48,7 @@ touch src/web-history.tsx
 
 ```typescript
 import { Suspense, lazy } from "solid-js";
-import { createWebHistory, createWebHistoryRoute } from "./library/history";
+import { createWebHistory, createWebHistoryRoute } from "solid-web-history";
 import { PageLoader } from "./components/loader";
 import NotFoundPage from "./pages/not-found";
 
