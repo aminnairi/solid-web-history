@@ -34,23 +34,8 @@ interface CreateWebHistoryOptions<GenericWebHistoryRoutes extends Array<WebHisto
   fallback: Component
 }
 
-export interface WebHistoryPushOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
-  route: GenericWebHistoryRoutes[number]["path"],
-  replace?: boolean,
-  parameters?: Record<string, string>,
-  searchParameters?: URLSearchParams
-}
-
-const createWebHistory: <GenericWebHistoryRoutes extends WebHistoryRoute[]>({
-  routes,
-  fallback
-}: CreateWebHistoryOptions<GenericWebHistoryRoutes>) => {
-  webHistoryPush: ({
-    route,
-    parameters,
-    searchParameters,
-    replace
-  }: WebHistoryPushOptions<GenericWebHistoryRoutes>) => void,
+const createWebHistory: <GenericWebHistoryRoutes extends WebHistoryRoute[]>(options: CreateWebHistoryOptions<GenericWebHistoryRoutes>) => {
+  webHistoryPush: (options: WebHistoryPushOptions) => void,
   webHistorySearchParameters: Accessor<URLSearchParams>,
   WebHistoryView: Component
 }
