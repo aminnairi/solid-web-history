@@ -8,7 +8,7 @@ const AboutPage = lazy(() => import("./pages/about"));
 const UserPage = lazy(() => import("./pages/users/user"));
 
 const { WebHistoryView, webHistoryPush } = createWebHistory({
-  fallback: () => <NotFoundPage />,
+  fallback: NotFoundPage,
   routes: [
     {
       path: "/",
