@@ -2,6 +2,12 @@
 
 Web API History implementation in Solid
 
+## Features
+
+- Written in TypeScript for maximum safety
+- Type safety when pushing a new route so that you don't push a removed or unknown route
+- Simple and expressive API 
+
 ## Requirements
 
 - Node
@@ -14,6 +20,41 @@ Coming soon...
 ## Usage
 
 ### Create a web history
+
+```typescript
+import { Component } from "solid-js";
+
+interface WebHistoryRoute {
+  path: string,
+  element: Component
+}
+
+interface CreateWebHistoryOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
+  routes: GenericWebHistoryRoutes,
+  fallback: Component
+}
+
+export interface WebHistoryPushOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
+  route: GenericWebHistoryRoutes[number]["path"],
+  replace?: boolean,
+  parameters?: Record<string, string>,
+  searchParameters?: URLSearchParams
+}
+
+const createWebHistory: <GenericWebHistoryRoutes extends WebHistoryRoute[]>({
+  routes,
+  fallback
+}: CreateWebHistoryOptions<GenericWebHistoryRoutes>) => {
+  webHistoryPush: ({
+    route,
+    parameters,
+    searchParameters,
+    replace
+  }: WebHistoryPushOptions<GenericWebHistoryRoutes>) => void,
+  webHistorySearchParameters: Accessor<URLSearchParams>,
+  WebHistoryView: Component
+}
+```
 
 ```bash
 touch src/web-history.tsx
@@ -68,6 +109,10 @@ export {
 ### Use the WebHistoryView
 
 ```typescript
+const WebHistoryView: () => JSX.Element
+```
+
+```typescript
 import { webHistoryPush, WebHistoryView } from "./web-history";
 
 export function App() {
@@ -92,6 +137,25 @@ export function App() {
       </ul>
       <WebHistoryView />
     </>
+  );
+}
+```
+
+### Use the search parameters
+
+```typescript
+const webHistorySearchParameters: Accessor<URLSearchParams>
+```
+
+```typescript
+import { createMemo } from "solid-js";
+import { webHistorySearchParameters } from "../../web-history";
+
+export default function UserPage() {
+  const theme = createMemo(() => webHistorySearchParameters().get("theme"));
+
+  return (
+    <h1>User page with theme {theme()}</h1>
   );
 }
 ```
