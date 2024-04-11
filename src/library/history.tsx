@@ -1,13 +1,13 @@
-import { JSX, createSignal, createMemo, onCleanup, onMount } from "solid-js";
+import { Component, createSignal, createMemo, onCleanup, onMount } from "solid-js";
 
 export interface WebHistoryRoute {
   path: string,
-  element: JSX.Element
+  element: Component
 }
 
 export interface CreateWebHistoryOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
   routes: GenericWebHistoryRoutes,
-  fallback: JSX.Element
+  fallback: Component
 }
 
 export const deduplicateSlashes = (text: string): string => {
