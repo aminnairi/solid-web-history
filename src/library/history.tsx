@@ -10,6 +10,13 @@ export interface CreateWebHistoryOptions<GenericWebHistoryRoutes extends Array<W
   fallback: Component
 }
 
+export interface WebHistoryPushOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
+  route: GenericWebHistoryRoutes[number]["path"],
+  replace?: boolean,
+  parameters?: Record<string, string>,
+  searchParameters?: URLSearchParams
+}
+
 export const deduplicateSlashes = (text: string): string => {
   return text.split(/\/+/).join("/");
 };
@@ -19,13 +26,6 @@ export const normalizeRoute = (route: string): string => {
 
   return regularExpression.exec(deduplicateSlashes(route.trim()))?.groups?.trimmedText ?? route;
 };
-
-export interface WebHistoryPushOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
-  route: GenericWebHistoryRoutes[number]["path"],
-  replace?: boolean,
-  parameters?: Record<string, string>,
-  searchParameters?: URLSearchParams
-}
 
 export const webHistoryMatches = (routePath: string, path: string): boolean => {
   const splittedRoutePath = routePath.split(/\/+/);
