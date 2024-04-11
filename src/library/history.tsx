@@ -1,16 +1,30 @@
 import { Component, createSignal, createMemo, onCleanup, onMount } from "solid-js";
 
-export interface WebHistoryRoute {
-  path: string,
-  element: Component
+type DynamicRouteSegments<Route> = Route extends `${infer FirstSegment}/${infer LastSegment}`
+  ? [...DynamicRouteSegments<FirstSegment>, ...DynamicRouteSegments<LastSegment>]
+  : Route extends ""
+  ? []
+  : Route extends `:${infer Segment}`
+  ? [Segment]
+  : []
+
+type PropsFromSegments<Segments extends Array<string>> = {
+  [Segment in Segments[number]]: string
 }
 
-export interface CreateWebHistoryOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
-  routes: GenericWebHistoryRoutes,
+export type WebHistoryRouteElementProps<Path> = PropsFromSegments<DynamicRouteSegments<Path>>
+
+export type WebHistoryRoute<Path> = {
+  path: Path,
+  element: Component<WebHistoryRouteElementProps<Path>>
+}
+
+export type CreateWebHistoryOptions<Path> = {
+  routes: Array<WebHistoryRoute<Path>>,
   fallback: Component
 }
 
-export interface WebHistoryPushOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
+export type WebHistoryPushOptions<GenericPath, GenericWebHistoryRoutes extends Array<WebHistoryRoute<GenericPath>>> = {
   route: GenericWebHistoryRoutes[number]["path"],
   replace?: boolean,
   parameters?: Record<string, string>,
@@ -38,11 +52,33 @@ export const webHistoryMatches = (routePath: string, path: string): boolean => {
   });
 };
 
-export const createWebHistory = <GenericWebHistoryRoutes extends Array<WebHistoryRoute>>({ routes, fallback }: CreateWebHistoryOptions<GenericWebHistoryRoutes>) => {
-  const webHistoryPush = ({ route, parameters = {}, searchParameters = new URLSearchParams(), replace = false }: WebHistoryPushOptions<GenericWebHistoryRoutes>) => {
+export const webHistoryParameters = (routePath: string, path: string): Record<string, string> => {
+  const splittedRoutePath = routePath.split(/\/+/);
+  const splittedPath = path.split(/\/+/);
+
+  return splittedRoutePath.reduce((parameters, splittedRoutePathPart, index) => {
+    const splittedPathPart = splittedPath[index];
+
+    if (splittedPathPart !== undefined && splittedRoutePathPart.startsWith(":")) {
+      return {
+        ...parameters,
+        [splittedRoutePathPart.slice(1)]: splittedPathPart
+      }
+    }
+
+    return parameters;
+  }, {} as Record<string, string>);
+};
+
+export const createWebHistoryRoute = <Path extends string>(options: WebHistoryRoute<Path>): WebHistoryRoute<Path> => {
+  return options;
+}
+
+export const createWebHistory = <Path extends string>(options: CreateWebHistoryOptions<Path>) => {
+  const webHistoryPush = ({ route, parameters = {}, searchParameters = new URLSearchParams(), replace = false }: WebHistoryPushOptions<Path, typeof options["routes"]>) => {
     const routeWithParameters = Object.entries(parameters).reduce((previousRoute, [parameterName, parameterValue]) => {
       return previousRoute.replace(`:${parameterName}`, parameterValue);
-    }, route);
+    }, route as string);
 
     const routeWithSearchParameters = searchParameters.size === 0 ? routeWithParameters : `${routeWithParameters}?${searchParameters.toString()}`;
 
@@ -73,18 +109,19 @@ export const createWebHistory = <GenericWebHistoryRoutes extends Array<WebHistor
 
   const WebHistoryView = () => {
     const webHistoryElement = createMemo(() => {
-      const foundRoute = routes.find(route => {
-        const normalizedRoutePath = normalizeRoute(route.path);
-        const normalizedPath = normalizeRoute(webHistoryPath())
+      const normalizedPath = normalizeRoute(webHistoryPath());
 
+      const foundRoute = options.routes.find(route => {
+        const normalizedRoutePath = normalizeRoute(route.path as string);
         return webHistoryMatches(normalizedRoutePath, normalizedPath);
       })
 
       if (foundRoute) {
-        return foundRoute.element;
+        const parameters = webHistoryParameters(foundRoute.path, normalizedPath);
+        return foundRoute.element(parameters as WebHistoryRouteElementProps<Path>);
       }
 
-      return fallback;
+      return options.fallback({});
     });
 
     const onPopstate = () => {
