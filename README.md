@@ -114,6 +114,12 @@ export function App() {
             About
           </button>
         </li>
+        {/* This will never compile as this route is not defined */}
+        <li onClick={() => webHistoryPush({ route: "/terms-and-conditions" })}>
+          <button>
+            Terms & Conditions
+          </button>
+        </li>
         <li onClick={() => webHistoryPush({ route: "/users/:user", parameters: { user: "123" } })}>
           <button>
             User#123
