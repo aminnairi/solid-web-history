@@ -43,18 +43,6 @@ const createWebHistory: <GenericWebHistoryRoutes extends WebHistoryRoute[]>(opti
 ```
 
 ```bash
-touch src/route.ts
-```
-
-```typescript
-export enum Route {
-  Home = "/",
-  About = "/about",
-  User = "/users/:user"
-}
-```
-
-```bash
 touch src/web-history.tsx
 ```
 
@@ -63,7 +51,6 @@ import { Suspense, lazy } from "solid-js";
 import { createWebHistory, createWebHistoryRoute } from "./library/history";
 import { PageLoader } from "./components/loader";
 import NotFoundPage from "./pages/not-found";
-import { Route } from "./route";
 
 const HomePage = lazy(() => import("./pages/home"));
 const AboutPage = lazy(() => import("./pages/about"));
@@ -72,30 +59,21 @@ const UserPage = lazy(() => import("./pages/users/user"));
 const { WebHistoryView, webHistoryPush, webHistorySearchParameters } = createWebHistory({
   fallback: NotFoundPage,
   routes: [
-    createWebHistoryRoute<Route.Home>({
-      path: Route.Home,
-      element: () => (
-        <Suspense fallback={<PageLoader />}>
-          <HomePage />
-        </Suspense>
-      )
-    }),
-    createWebHistoryRoute<Route.About>({
-      path: Route.About,
-      element: () => (
-        <Suspense fallback={<PageLoader />}>
-          <AboutPage />
-        </Suspense>
-      )
-    }),
-    createWebHistoryRoute<Route.User>({
-      path: Route.User,
-      element: ({ user }) => (
-        <Suspense fallback={<PageLoader />}>
-          <UserPage user={user} />
-        </Suspense>
-      )
-    } as const)
+    createWebHistoryRoute("/", () => (
+      <Suspense fallback={<PageLoader />}>
+        <HomePage />
+      </Suspense>
+    )),
+    createWebHistoryRoute("/about", () => (
+      <Suspense fallback={<PageLoader />}>
+        <AboutPage />
+      </Suspense>
+    )),
+    createWebHistoryRoute("/users/:user", ({ user }) => (
+      <Suspense fallback={<PageLoader />}>
+        <UserPage user={user} />
+      </Suspense>
+    ))
   ]
 } as const);
 
@@ -113,30 +91,23 @@ const WebHistoryView: () => JSX.Element
 ```
 
 ```typescript
-import { Route } from './route';
 import { webHistoryPush, WebHistoryView } from './web-history';
 
 export function App() {
   return (
     <>
       <ul>
-        <li onClick={() => webHistoryPush({ route: Route.Home })}>
+        <li onClick={() => webHistoryPush({ route: "/" })}>
           <button>
             Home
           </button>
         </li>
-        <li onClick={() => webHistoryPush({ route: Route.About })}>
+        <li onClick={() => webHistoryPush({ route: "/about" })}>
           <button>
             About
           </button>
         </li>
-        {/* This will never compile as this route is not defined */}
-        <li onClick={() => webHistoryPush({ route: "/terms-and-conditions" })}>
-          <button>
-            Terms & Conditions
-          </button>
-        </li>
-        <li onClick={() => webHistoryPush({ route: Route.User, parameters: { user: "123" } })}>
+        <li onClick={() => webHistoryPush({ route: "/users/:user", parameters: { user: "123" } })}>
           <button>
             User#123
           </button>
@@ -158,9 +129,8 @@ const webHistorySearchParameters: Accessor<URLSearchParams>
 import { createMemo } from "solid-js";
 import { webHistorySearchParameters } from "../../web-history.tsx";
 import { WebHistoryRouteElementProps } from "../../library/history.tsx";
-import { Route } from "../../route.ts";
 
-export default function UserPage({ user }: WebHistoryRouteElementProps<Route.User>) {
+export default function UserPage({ user }: WebHistoryRouteElementProps<"/users/:user">) {
   const searchParameters = webHistorySearchParameters();
   const theme = createMemo(() => searchParameters.get("theme"));
 
