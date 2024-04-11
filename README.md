@@ -6,6 +6,7 @@ Web API History implementation in Solid
 
 - Written in TypeScript for maximum safety
 - Type safety when pushing a new route so that you don't push a removed or unknown route
+- Type safety when defining a page so that you don't use an unknown route parameter
 - Simple and expressive API 
 
 ## Requirements
