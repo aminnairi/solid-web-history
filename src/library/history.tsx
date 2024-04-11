@@ -14,9 +14,11 @@ type PropsFromSegments<Segments extends Array<string>> = {
 
 export type WebHistoryRouteElementProps<Path> = PropsFromSegments<DynamicRouteSegments<Path>>
 
+export type WebHistoryRouteElement<Path> = Component<WebHistoryRouteElementProps<Path>>;
+
 export type WebHistoryRoute<Path> = {
   path: Path,
-  element: Component<WebHistoryRouteElementProps<Path>>
+  element: WebHistoryRouteElement<Path>
 }
 
 export type CreateWebHistoryOptions<Path> = {
@@ -70,8 +72,11 @@ export const webHistoryParameters = (routePath: string, path: string): Record<st
   }, {} as Record<string, string>);
 };
 
-export const createWebHistoryRoute = <Path extends string>(options: WebHistoryRoute<Path>): WebHistoryRoute<Path> => {
-  return options;
+export const createWebHistoryRoute = <Path extends string>(path: Path, element: WebHistoryRouteElement<Path>): WebHistoryRoute<Path> => {
+  return {
+    path,
+    element
+  };
 }
 
 export const createWebHistory = <Path extends string>(options: CreateWebHistoryOptions<Path>) => {
