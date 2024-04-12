@@ -1,8 +1,9 @@
 import { createMemo } from "solid-js";
-import { webHistorySearchParameters } from "../../web-history";
-import { WebHistoryRouteElementProps } from "../../library/history";
+import { InferPageProps } from "../../library/history";
+import { webHistorySearchParameters } from "../../history";
+import { userPage } from "../../history/pages/users/user";
 
-export default function UserPage({ user }: WebHistoryRouteElementProps<"/users/:user">) {
+export default function UserPage({ user }: InferPageProps<typeof userPage>) {
   const theme = createMemo(() => webHistorySearchParameters().get("theme"));
 
   return (

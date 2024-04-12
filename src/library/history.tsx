@@ -12,25 +12,27 @@ type PropsFromSegments<Segments extends Array<string>> = {
   [Segment in Segments[number]]: string
 }
 
-export type WebHistoryRouteElementProps<Path> = PropsFromSegments<DynamicRouteSegments<Path>>
+export type PageProps<Path> = PropsFromSegments<DynamicRouteSegments<Path>>
 
-export type WebHistoryRouteElement<Path> = Component<WebHistoryRouteElementProps<Path>>;
+export type PageView<Path> = Component<PageProps<Path>>;
 
-export type WebHistoryRoute<Path> = {
+export type InferPageProps<GenericPage> = GenericPage extends Page<infer Path> ? PageProps<Path> : never
+
+export type Page<Path> = {
   path: Path,
-  element: WebHistoryRouteElement<Path>
+  view: PageView<Path>
 }
 
 export type CreateWebHistoryOptions<Path> = {
-  routes: Array<WebHistoryRoute<Path>>,
+  pages: Array<Page<Path>>,
   fallback: Component
 }
 
-export type WebHistoryPushOptions<GenericPath, GenericWebHistoryRoutes extends Array<WebHistoryRoute<GenericPath>>> = {
-  route: GenericWebHistoryRoutes[number]["path"],
-  replace?: boolean,
-  parameters?: Record<string, string>,
-  searchParameters?: URLSearchParams
+export type GoToPage<Path> = (parameters: PageProps<Path>, searchParameters?: URLSearchParams, replace?: boolean) => void
+
+export type CreateWebHistoryRoute<Path> = {
+  page: Page<Path>,
+  goToPage: GoToPage<Path>
 }
 
 export const deduplicateSlashes = (text: string): string => {
@@ -44,10 +46,10 @@ export const normalizeRoute = (route: string): string => {
 };
 
 export const webHistoryMatches = (routePath: string, path: string): boolean => {
-  const splittedRoutePath = routePath.split(/\/+/);
-  const splittedPath = path.split(/\/+/);
+  const splittedRoutePath = normalizeRoute(routePath).split(/\/+/);
+  const splittedPath = normalizeRoute(path).split(/\/+/);
 
-  return splittedRoutePath.every((splittedRoutePathPart, index) => {
+  return splittedRoutePath.length === splittedPath.length && splittedRoutePath.every((splittedRoutePathPart, index) => {
     const splittedPathPart = splittedPath[index];
 
     return splittedPathPart !== undefined && splittedRoutePathPart.startsWith(":") || splittedRoutePathPart === splittedPathPart;
@@ -55,8 +57,8 @@ export const webHistoryMatches = (routePath: string, path: string): boolean => {
 };
 
 export const webHistoryParameters = (routePath: string, path: string): Record<string, string> => {
-  const splittedRoutePath = routePath.split(/\/+/);
-  const splittedPath = path.split(/\/+/);
+  const splittedRoutePath = normalizeRoute(routePath).split(/\/+/);
+  const splittedPath = normalizeRoute(path).split(/\/+/);
 
   return splittedRoutePath.reduce((parameters, splittedRoutePathPart, index) => {
     const splittedPathPart = splittedPath[index];
@@ -72,20 +74,13 @@ export const webHistoryParameters = (routePath: string, path: string): Record<st
   }, {} as Record<string, string>);
 };
 
-export const createWebHistoryRoute = <Path extends string>(path: Path, element: WebHistoryRouteElement<Path>): WebHistoryRoute<Path> => {
-  return {
-    path,
-    element
-  };
-}
-
-export const createWebHistory = <Path extends string>(options: CreateWebHistoryOptions<Path>) => {
-  const webHistoryPush = ({ route, parameters = {}, searchParameters = new URLSearchParams(), replace = false }: WebHistoryPushOptions<Path, typeof options["routes"]>) => {
+export const createWebHistoryRoute = <Path extends string>(path: Path, element: PageView<Path>): CreateWebHistoryRoute<Path> => {
+  const goToPage = (parameters: PageProps<Path>, searchParameters?: URLSearchParams, replace?: boolean) => {
     const routeWithParameters = Object.entries(parameters).reduce((previousRoute, [parameterName, parameterValue]) => {
-      return previousRoute.replace(`:${parameterName}`, parameterValue);
-    }, route as string);
+      return previousRoute.replace(`:${parameterName}`, `${parameterValue}`);
+    }, path as string);
 
-    const routeWithSearchParameters = searchParameters.size === 0 ? routeWithParameters : `${routeWithParameters}?${searchParameters.toString()}`;
+    const routeWithSearchParameters = searchParameters?.size ?? 0 === 0 ? routeWithParameters : `${routeWithParameters}?${searchParameters?.toString()}`;
 
     if (replace) {
       window.history.replaceState(null, "", routeWithSearchParameters);
@@ -94,8 +89,19 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
     }
 
     window.dispatchEvent(new CustomEvent("popstate"));
+
   };
 
+  return {
+    page: {
+      path,
+      view: element
+    },
+    goToPage
+  };
+};
+
+export const createWebHistory = <Path extends string>(options: CreateWebHistoryOptions<Path>) => {
   const webHistoryBack = () => {
     window.history.back();
   };
@@ -116,14 +122,14 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
     const webHistoryElement = createMemo(() => {
       const normalizedPath = normalizeRoute(webHistoryPath());
 
-      const foundRoute = options.routes.find(route => {
+      const foundRoute = options.pages.find(route => {
         const normalizedRoutePath = normalizeRoute(route.path as string);
         return webHistoryMatches(normalizedRoutePath, normalizedPath);
       })
 
       if (foundRoute) {
         const parameters = webHistoryParameters(foundRoute.path, normalizedPath);
-        return foundRoute.element(parameters as WebHistoryRouteElementProps<Path>);
+        return foundRoute.view(parameters as PageProps<Path>);
       }
 
       return options.fallback({});
@@ -152,7 +158,6 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
   return {
     WebHistoryView,
     webHistorySearchParameters,
-    webHistoryPush,
     webHistoryBack,
     webHistoryForward,
     webHistoryGo

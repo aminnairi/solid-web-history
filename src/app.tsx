@@ -1,20 +1,23 @@
-import { webHistoryPush, WebHistoryView } from './web-history';
+import { WebHistoryView } from "./history";
+import { goToAboutPage } from "./history/pages/about";
+import { goToHomePage } from "./history/pages/home";
+import { goToUserPage } from "./history/pages/users/user";
 
 export function App() {
   return (
     <>
       <ul>
-        <li onClick={() => webHistoryPush({ route: "/" })}>
+        <li onClick={() => goToHomePage({})}>
           <button>
             Home
           </button>
         </li>
-        <li onClick={() => webHistoryPush({ route: "/about" })}>
+        <li onClick={() => goToAboutPage({})}>
           <button>
             About
           </button>
         </li>
-        <li onClick={() => webHistoryPush({ route: "/users/:user", parameters: { user: "123" } })}>
+        <li onClick={() => goToUserPage({ user: "123" })}>
           <button>
             User#123
           </button>
