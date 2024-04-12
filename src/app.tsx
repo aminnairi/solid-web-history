@@ -1,4 +1,4 @@
-import { WebHistoryView } from "./history";
+import { PageView } from "./history";
 import { goToAboutPage } from "./history/pages/about";
 import { goToHomePage } from "./history/pages/home";
 import { goToUserPage } from "./history/pages/users/user";
@@ -23,7 +23,7 @@ export function App() {
           </button>
         </li>
       </ul>
-      <WebHistoryView />
+      <PageView />
     </>
   );
 }

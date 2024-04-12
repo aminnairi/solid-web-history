@@ -118,7 +118,7 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
 
   const [webHistorySearchParameters, setWebHistorySearchParameters] = createSignal(new URLSearchParams(window.location.search));
 
-  const WebHistoryView = () => {
+  const PageView = () => {
     const webHistoryElement = createMemo(() => {
       const normalizedPath = normalizeRoute(webHistoryPath());
 
@@ -156,10 +156,10 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
   };
 
   return {
-    WebHistoryView,
     webHistorySearchParameters,
     webHistoryBack,
     webHistoryForward,
     webHistoryGo
+    PageView,
   };
 }

@@ -4,7 +4,7 @@ import { homePage } from "./pages/home";
 import { aboutPage } from "./pages/about";
 import { userPage } from "./pages/users/user";
 
-export const { WebHistoryView, webHistorySearchParameters } = createWebHistory({
+export const { PageView, searchParameters } = createPages({
   fallback: NotFoundPage,
   pages: [
     homePage,
