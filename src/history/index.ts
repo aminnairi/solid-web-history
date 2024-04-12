@@ -1,4 +1,4 @@
-import { createWebHistory } from "../library/history";
+import { createPages } from "../library/history";
 import NotFoundPage from "../pages/not-found";
 import { homePage } from "./pages/home";
 import { aboutPage } from "./pages/about";

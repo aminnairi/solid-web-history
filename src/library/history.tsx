@@ -23,14 +23,14 @@ export type Page<Path> = {
   view: PageView<Path>
 }
 
-export type CreateWebHistoryOptions<Path> = {
+export type CreatePagesOptions<Path> = {
   pages: Array<Page<Path>>,
   fallback: Component
 }
 
 export type GoToPage<Path> = (parameters: PageProps<Path>, searchParameters?: URLSearchParams, replace?: boolean) => void
 
-export type CreateWebHistoryRoute<Path> = {
+export type CreatePageOutput<Path> = {
   page: Page<Path>,
   goToPage: GoToPage<Path>
 }
@@ -45,7 +45,7 @@ export const normalizeRoute = (route: string): string => {
   return regularExpression.exec(deduplicateSlashes(route.trim()))?.groups?.trimmedText ?? route;
 };
 
-export const webHistoryMatches = (routePath: string, path: string): boolean => {
+export const matches = (routePath: string, path: string): boolean => {
   const splittedRoutePath = normalizeRoute(routePath).split(/\/+/);
   const splittedPath = normalizeRoute(path).split(/\/+/);
 
@@ -56,7 +56,7 @@ export const webHistoryMatches = (routePath: string, path: string): boolean => {
   });
 };
 
-export const webHistoryParameters = (routePath: string, path: string): Record<string, string> => {
+export const matchParameters = (routePath: string, path: string): Record<string, string> => {
   const splittedRoutePath = normalizeRoute(routePath).split(/\/+/);
   const splittedPath = normalizeRoute(path).split(/\/+/);
 
@@ -74,7 +74,7 @@ export const webHistoryParameters = (routePath: string, path: string): Record<st
   }, {} as Record<string, string>);
 };
 
-export const createWebHistoryRoute = <Path extends string>(path: Path, element: PageView<Path>): CreateWebHistoryRoute<Path> => {
+export const createPage = <Path extends string>(path: Path, view: PageView<Path>): CreatePageOutput<Path> => {
   const goToPage = (parameters: PageProps<Path>, searchParameters?: URLSearchParams, replace?: boolean) => {
     const routeWithParameters = Object.entries(parameters).reduce((previousRoute, [parameterName, parameterValue]) => {
       return previousRoute.replace(`:${parameterName}`, `${parameterValue}`);
@@ -89,46 +89,45 @@ export const createWebHistoryRoute = <Path extends string>(path: Path, element: 
     }
 
     window.dispatchEvent(new CustomEvent("popstate"));
-
   };
 
   return {
     page: {
       path,
-      view: element
+      view
     },
     goToPage
   };
 };
 
-export const createWebHistory = <Path extends string>(options: CreateWebHistoryOptions<Path>) => {
-  const webHistoryBack = () => {
+export const createPages = <Path extends string>(options: CreatePagesOptions<Path>) => {
+  const goToPreviousPage = () => {
     window.history.back();
   };
 
-  const webHistoryForward = () => {
+  const goToNextPage = () => {
     window.history.forward();
   };
 
-  const webHistoryGo = (delta: number) => {
+  const goToPageAtOffset = (delta: number) => {
     window.history.go(delta);
   };
 
-  const [webHistoryPath, setWebHistoryPath] = createSignal(window.location.pathname);
+  const [path, setPath] = createSignal(window.location.pathname);
 
-  const [webHistorySearchParameters, setWebHistorySearchParameters] = createSignal(new URLSearchParams(window.location.search));
+  const [searchParameters, setSearchParameters] = createSignal(new URLSearchParams(window.location.search));
 
   const PageView = () => {
     const webHistoryElement = createMemo(() => {
-      const normalizedPath = normalizeRoute(webHistoryPath());
+      const normalizedPath = normalizeRoute(path());
 
       const foundRoute = options.pages.find(route => {
         const normalizedRoutePath = normalizeRoute(route.path as string);
-        return webHistoryMatches(normalizedRoutePath, normalizedPath);
+        return matches(normalizedRoutePath, normalizedPath);
       })
 
       if (foundRoute) {
-        const parameters = webHistoryParameters(foundRoute.path, normalizedPath);
+        const parameters = matchParameters(foundRoute.path, normalizedPath);
         return foundRoute.view(parameters as PageProps<Path>);
       }
 
@@ -136,8 +135,8 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
     });
 
     const onPopstate = () => {
-      setWebHistoryPath(window.location.pathname);
-      setWebHistorySearchParameters(new URLSearchParams(window.location.search));
+      setPath(window.location.pathname);
+      setSearchParameters(new URLSearchParams(window.location.search));
     };
 
     onMount(() => {
@@ -156,10 +155,10 @@ export const createWebHistory = <Path extends string>(options: CreateWebHistoryO
   };
 
   return {
-    webHistorySearchParameters,
-    webHistoryBack,
-    webHistoryForward,
-    webHistoryGo
     PageView,
+    searchParameters,
+    goToPreviousPage,
+    goToNextPage,
+    goToPageAtOffset
   };
 }
