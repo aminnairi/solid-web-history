@@ -20,94 +20,95 @@ Coming soon...
 
 ## Usage
 
-### Create a web history
-
-```typescript
-import { Component } from "solid-js";
-
-interface WebHistoryRoute {
-  path: string,
-  element: Component
-}
-
-interface CreateWebHistoryOptions<GenericWebHistoryRoutes extends Array<WebHistoryRoute>> {
-  routes: GenericWebHistoryRoutes,
-  fallback: Component
-}
-
-const createWebHistory: <GenericWebHistoryRoutes extends WebHistoryRoute[]>(options: CreateWebHistoryOptions<GenericWebHistoryRoutes>) => {
-  webHistoryPush: (options: WebHistoryPushOptions) => void,
-  webHistorySearchParameters: Accessor<URLSearchParams>,
-  WebHistoryView: Component
-}
-```
+### Create a page definition
 
 ```bash
-touch src/web-history.tsx
+mkdir --parent src/history/pages/users
+touch src/history/users/user.tsx
 ```
 
 ```typescript
 import { Suspense, lazy } from "solid-js";
-import { createWebHistory, createWebHistoryRoute } from "solid-web-history";
-import { PageLoader } from "./components/loader";
-import NotFoundPage from "./pages/not-found";
+import { createWebHistoryRoute } from "../../../library/history";
+import { PageLoader } from "../../../components/loader";
 
-const HomePage = lazy(() => import("./pages/home"));
-const AboutPage = lazy(() => import("./pages/about"));
-const UserPage = lazy(() => import("./pages/users/user"));
+const UserPage = lazy(() => import("../../../pages/users/user"));
 
-const { WebHistoryView, webHistoryPush, webHistorySearchParameters } = createWebHistory({
-  fallback: NotFoundPage,
-  routes: [
-    createWebHistoryRoute("/", () => (
-      <Suspense fallback={<PageLoader />}>
-        <HomePage />
-      </Suspense>
-    )),
-    createWebHistoryRoute("/about", () => (
-      <Suspense fallback={<PageLoader />}>
-        <AboutPage />
-      </Suspense>
-    )),
-    createWebHistoryRoute("/users/:user", ({ user }) => (
-      <Suspense fallback={<PageLoader />}>
-        <UserPage user={user} />
-      </Suspense>
-    ))
-  ]
-} as const);
+export const { goToPage: goToUserPage, page: userPage } = createWebHistoryRoute("/users/:user", ({ user }) => (
+  <Suspense fallback={< PageLoader />}>
+    <UserPage user={user} />
+  </Suspense>
+))
+```
 
-export {
-  WebHistoryView,
-  webHistoryPush,
-  webHistorySearchParameters
+### Create a page view
+
+```bash
+mkdir --parent src/pages/users
+touch src/pages/users/user.tsx
+```
+
+```typescript
+import { createMemo } from "solid-js";
+import { InferPageProps } from "../../library/history";
+import { webHistorySearchParameters } from "../../history";
+import { userPage } from "../../history/pages/users/user";
+
+export default function UserPage({ user }: InferPageProps<typeof userPage>) {
+  const theme = createMemo(() => webHistorySearchParameters().get("theme"));
+
+  return (
+    <h1>User#{user} page with theme {theme()}</h1>
+  );
 }
+```
+
+### Create a web history
+
+```bash
+touch src/history/index.ts
+```
+
+```typescript
+import { createWebHistory } from "../library/history";
+import NotFoundPage from "../pages/not-found";
+import { homePage } from "./pages/home";
+import { aboutPage } from "./pages/about";
+import { userPage } from "./pages/users/user";
+
+export const { WebHistoryView, webHistorySearchParameters } = createWebHistory({
+  fallback: NotFoundPage,
+  pages: [
+    homePage,
+    aboutPage,
+    userPage
+  ]
+});
 ```
 
 ### Use the WebHistoryView
 
 ```typescript
-const WebHistoryView: () => JSX.Element
-```
-
-```typescript
-import { webHistoryPush, WebHistoryView } from './web-history';
+import { WebHistoryView } from "./history";
+import { goToAboutPage } from "./history/pages/about";
+import { goToHomePage } from "./history/pages/home";
+import { goToUserPage } from "./history/pages/users/user";
 
 export function App() {
   return (
     <>
       <ul>
-        <li onClick={() => webHistoryPush({ route: "/" })}>
+        <li onClick={() => goToHomePage({})}>
           <button>
             Home
           </button>
         </li>
-        <li onClick={() => webHistoryPush({ route: "/about" })}>
+        <li onClick={() => goToAboutPage({})}>
           <button>
             About
           </button>
         </li>
-        <li onClick={() => webHistoryPush({ route: "/users/:user", parameters: { user: "123" } })}>
+        <li onClick={() => goToUserPage({ user: "123" })}>
           <button>
             User#123
           </button>
@@ -122,15 +123,12 @@ export function App() {
 ### Use the search parameters
 
 ```typescript
-const webHistorySearchParameters: Accessor<URLSearchParams>
-```
-
-```typescript
 import { createMemo } from "solid-js";
-import { WebHistoryRouteElementProps } from "solid-web-history";
-import { webHistorySearchParameters } from "../../web-history";
+import { InferPageProps } from "../../library/history";
+import { webHistorySearchParameters } from "../../history";
+import { userPage } from "../../history/pages/users/user";
 
-export default function UserPage({ user }: WebHistoryRouteElementProps<"/users/:user">) {
+export default function UserPage({ user }: InferPageProps<typeof userPage>) {
   const theme = createMemo(() => webHistorySearchParameters().get("theme"));
 
   return (
