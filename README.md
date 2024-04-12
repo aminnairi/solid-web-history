@@ -8,6 +8,8 @@ Web API History implementation in Solid
 - Type safety when pushing a new route so that you don't push a removed or unknown route
 - Type safety when defining a page so that you don't use an unknown route parameter
 - Simple and expressive API 
+- Easier times testing parameterized page
+- Functional and declarative style of programming
 
 ## Requirements
 
